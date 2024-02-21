@@ -8,6 +8,9 @@
     email_host: smtphost
     email_from: system@email.com
     email_to: user@email.com
+    unreachable_hosts: {}
+    failed_hosts: {}
+
 
     #random settings
     csv_path: /tmp
@@ -27,11 +30,22 @@
       state: present
     delegate_to: localhost
     run_once: true
+    - name: Gather facts for all hosts (retry unreachable)
+      ansible.builtin.setup:
+      register: all_hosts
+      retries: 3
+      delay: 5
 
+    - name: Identify unreachable and failed hosts
+      set_fact:
+        unreachable_hosts: "{{ hostvars[item]['ansible_status'] is not defined ? item : {} }}"
+        failed_hosts: "{{ hostvars[item]['failures'] | length > 0 ? item : {} }}"
+      loop: "{{ all_hosts.results }}"
+ 
   - name: Build out CSV file
     ansible.builtin.lineinfile:
       dest: "{{ csv_path }}/{{ csv_filename }}"
-      line: "{{ inventory_hostname }},{{ ansible_distribution_version }},{{ ansible_kernel }},{{ rebooted.stdout }}"
+      line: "{{ inventory_hostname }},{{ ansible_distribution_version }},{{ ansible_kernel }},{{ rebooted.stdout }},{{ unreachable_hosts[inventory_hostname] is defined ? 'UNREACHABLE' : '' }},{{ failed_hosts[inventory_hostname] is defined ? failed_hosts[inventory_hostname][0]['msg'] : '' "
       create: true
       state: present
     delegate_to: localhost
