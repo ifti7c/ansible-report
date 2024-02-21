@@ -1,14 +1,50 @@
-<table style="border: 1px solid black; border-collapse: collapse;">
-<tr>
-    {% for header in headers.split(",") %}
-    <th style="border: 1px solid black; padding: 8px 16px;">{{ header }}</th>
-    {% endfor %}
-</tr>
-{% for host in csv_file.list %}
-<tr>
-    {% for header in headers.split(",") %}
-    <td style="border: 1px solid black; padding: 8px 16px;">{{ host[header] }}</td>
-    {% endfor %}
-</tr>
-{% endfor %}
-</table>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Patching Report</title>
+</head>
+<body>
+  <h1>Patching Report</h1>
+  <h2>Summary</h2>
+  <p>Total Hosts: {{ csv_file.list | length }}</p>
+  <p>Reachable Hosts: {{ csv_file.list | selectattr('Hostname') | list | length }}</p>
+  <p>Unreachable Hosts: {{ csv_file.list | selectattr('Hostname') is not defined | list | length }}</p>
+  <p>Failed Hosts: {{ csv_file.list | selectattr('Status', 'FAILED') | list | length }}</p>
+
+  <h2>Detailed Report (Failed & Unreachable Hosts)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Hostname</th>
+        <th>Distribution</th>
+        <th>Kernel</th>
+        <th>Last Reboot</th>
+        <th>Status</th>
+        <th>Failure Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for host in csv_file.list | selectattr('Hostname') is not defined or host.Status == 'FAILED' %}
+        <tr>
+          <td>{{ host.Hostname }}</td>
+          <td>{{ host.Distro_Ver }}</td>
+          <td>{{ host.Kernel_Ver }}</td>
+          <td>{{ host.Last_Rebooted }}</td>
+          <td style="{% if host.Hostname is not defined %}color: red;{% elif host.Status == 'FAILED' %}color: orange;{% endif %}">
+            {% if host.Hostname is not defined %}
+              UNREACHABLE
+            {% elif host.Status == 'FAILED' %}
+              FAILED
+            {% endif %}
+          </td>
+          <td>
+            {% if host.Status == 'FAILED' %}
+              {{ host.Reason }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
