@@ -15,8 +15,11 @@
     headers: Hostname,Distro Ver,Kernel Ver,Last Rebooted,Status
 
   tasks:
-    - name: Gather facts about all hosts
+    - name: Gather specific facts about all hosts
       ansible.builtin.setup:
+        gather_subset:
+          - ansible_distribution_version
+          - ansible_kernel
         register: all_hosts
 
     - name: Calculate unreachable and failed hosts
@@ -30,14 +33,15 @@
             host: "{{ item.hostname }}"
             distro: "{{ item.ansible_distribution_version }}"
             kernel: "{{ item.ansible_kernel }}"
-            reboot: "{{ item.msg | regex_replace('^.* (.*)$', '\\1') | default('') }}"  # Extract reboot info from msg (optional)
+            # Extract reboot info only for successful hosts
+            reboot: "{{ item.msg | regex_replace('^.* (.*)$', '\\1') | default('') }}" if item.status == 'success'
             status: "{{ item.status }}"
           vars:
             item: "{{ all_hosts.results }}"
         - name: Add host entry to CSV
           ansible.builtin.lineinfile:
             dest: "{{ csv_path }}/{{ csv_filename }}"
-            line: "{{ host }},{{ distro }},{{ kernel }},{{ reboot }},{{ status }}"
+            line: "{{ host }},{{ distro }},{{ kernel }},{{ reboot | default('UNREACHABLE') }},{{ status }}"
             create: true
             state: present
             delegate_to: localhost
