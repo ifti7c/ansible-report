@@ -1,50 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Patching Report</title>
 </head>
 <body>
   <h1>Patching Report</h1>
-  <h2>Summary</h2>
-  <p>Total Hosts: {{ all_hosts.results | length }}</p>
-  <p>Reachable Hosts: {{ all_hosts.results | selectattr('ansible_status') | list | length }}</p>
-  <p>Unreachable Hosts: {{ unreachable_hosts | dict2items | list | length }}</p>
-  <p>Failed Hosts: {{ failed_hosts | dict2items | list | length }}</p>
-
-  <h2>Detailed Report</h2>
   <table>
     <thead>
       <tr>
         <th>Hostname</th>
-        <th>Distribution</th>
-        <th>Kernel</th>
-        <th>Last Reboot</th>
+        <th>Distro Ver</th>
+        <th>Kernel Ver</th>
+        <th>Last Rebooted</th>
         <th>Status</th>
-        <th>Failure Reason</th>
       </tr>
     </thead>
     <tbody>
-      {% for host, details in all_hosts.results | flatten %}
-        <tr>
-          <td>{{ host.inventory_hostname }}</td>
-          <td>{{ host.ansible_distribution_version }}</td>
-          <td>{{ host.ansible_kernel }}</td>
-          <td>{{ details.reboot.stdout }}</td>
-          <td>
-            {% if host.inventory_hostname in unreachable_hosts %}
-              UNREACHABLE
-            {% elif host.inventory_hostname in failed_hosts %}
-              FAILED
-            {% else %}
-              OK
-            {% endif %}
-          </td>
-          <td>
-            {% if host.inventory_hostname in failed_hosts %}
-              {{ failed_hosts[host.inventory_hostname][0]['msg'] }}
-            {% endif %}
-          </td>
-        </tr>
+      {% for row in csv_file.results %}
+      <tr>
+        <td>{{ row.Hostname }}</td>
+        <td>{{ row.Distro_Ver }}</td>
+        <td>{{ row.Kernel_Ver }}</td>
+        {% if row.Status == 'success' %}
+          <td>{{ row.Last_Rebooted }}</td>
+        {% elif row.Status == 'failed' %}
+          <td>UNREACHABLE</td>
+        {% else %}
+          <td>{{ row.Last_Rebooted }}</td>
+        {% endif %}
+        <td>{{ row.Status }}</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
