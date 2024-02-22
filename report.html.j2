@@ -6,12 +6,12 @@
 <body>
   <h1>Patching Report</h1>
   <h2>Summary</h2>
-  <p>Total Hosts: {{ csv_file.list | length }}</p>
-  <p>Reachable Hosts: {{ csv_file.list | selectattr('Hostname') | list | length }}</p>
-  <p>Unreachable Hosts: {{ csv_file.list | selectattr('Hostname') is not defined | list | length }}</p>
-  <p>Failed Hosts: {{ csv_file.list | selectattr('Status', 'FAILED') | list | length }}</p>
+  <p>Total Hosts: {{ all_hosts.results | length }}</p>
+  <p>Reachable Hosts: {{ all_hosts.results | selectattr('ansible_status') | list | length }}</p>
+  <p>Unreachable Hosts: {{ unreachable_hosts | dict2items | list | length }}</p>
+  <p>Failed Hosts: {{ failed_hosts | dict2items | list | length }}</p>
 
-  <h2>Detailed Report (Failed & Unreachable Hosts)</h2>
+  <h2>Detailed Report</h2>
   <table>
     <thead>
       <tr>
@@ -24,22 +24,24 @@
       </tr>
     </thead>
     <tbody>
-      {% for host in csv_file.list | selectattr('Hostname') is not defined or host.Status == 'FAILED' %}
+      {% for host, details in all_hosts.results | flatten %}
         <tr>
-          <td>{{ host.Hostname }}</td>
-          <td>{{ host.Distro_Ver }}</td>
-          <td>{{ host.Kernel_Ver }}</td>
-          <td>{{ host.Last_Rebooted }}</td>
-          <td style="{% if host.Hostname is not defined %}color: red;{% elif host.Status == 'FAILED' %}color: orange;{% endif %}">
-            {% if host.Hostname is not defined %}
+          <td>{{ host.inventory_hostname }}</td>
+          <td>{{ host.ansible_distribution_version }}</td>
+          <td>{{ host.ansible_kernel }}</td>
+          <td>{{ details.reboot.stdout }}</td>
+          <td>
+            {% if host.inventory_hostname in unreachable_hosts %}
               UNREACHABLE
-            {% elif host.Status == 'FAILED' %}
+            {% elif host.inventory_hostname in failed_hosts %}
               FAILED
+            {% else %}
+              OK
             {% endif %}
           </td>
           <td>
-            {% if host.Status == 'FAILED' %}
-              {{ host.Reason }}
+            {% if host.inventory_hostname in failed_hosts %}
+              {{ failed_hosts[host.inventory_hostname][0]['msg'] }}
             {% endif %}
           </td>
         </tr>
