@@ -14,6 +14,7 @@
         <th>Kernel Ver</th>
         <th>Last Rebooted</th>
         <th>Status</th>
+        <th>Failure Reason</th>
       </tr>
     </thead>
     <tbody>
@@ -24,12 +25,13 @@
         <td>{{ row.Kernel_Ver }}</td>
         {% if row.Status == 'success' %}
           <td>{{ row.Last_Rebooted }}</td>
-        {% elif row.Status == 'failed' %}
-          <td>UNREACHABLE</td>
         {% else %}
-          <td>{{ row.Last_Rebooted }}</td>
+          <td>UNREACHABLE</td>
         {% endif %}
         <td>{{ row.Status }}</td>
+        {% if row.Status == 'failed' and row.reboot != 'UNREACHABLE' %}
+          <td>{{ row.reboot }}</td> {% else %}
+          <td>-</td> {% endif %}
       </tr>
       {% endfor %}
     </tbody>
