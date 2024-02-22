@@ -1,40 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Patching Report</title>
+  <title>Patching Report - {{ inventory_hostname }}</title>
+  <style>
+    /* Your CSS styles */
+  </style>
 </head>
 <body>
   <h1>Patching Report</h1>
-  <table>
+  <h2>Host Information</h2>
+  <table border="1">
     <thead>
       <tr>
         <th>Hostname</th>
-        <th>Distro Ver</th>
-        <th>Kernel Ver</th>
+        <th>Distro Version</th>
+        <th>Kernel Version</th>
         <th>Last Rebooted</th>
         <th>Status</th>
-        <th>Failure Reason</th>
+        <th>Reason (if applicable)</th>
       </tr>
     </thead>
     <tbody>
-      {% for row in csv_file.results %}
       <tr>
-        <td>{{ row.Hostname }}</td>
-        <td>{{ row.Distro_Ver }}</td>
-        <td>{{ row.Kernel_Ver }}</td>
-        {% if row.Status == 'success' %}
-          <td>{{ row.Last_Rebooted }}</td>
-        {% else %}
-          <td>UNREACHABLE</td>
-        {% endif %}
-        <td>{{ row.Status }}</td>
-        {% if row.Status == 'failed' and row.reboot != 'UNREACHABLE' %}
-          <td>{{ row.reboot }}</td> {% else %}
-          <td>-</td> {% endif %}
+        <td>{{ inventory_hostname }}</td>
+        <td>{{ ansible_distribution_version }}</td>
+        <td>{{ ansible_kernel }}</td>
+        <td>{{ rebooted.stdout }}</td>
+        <td>{{ hostvars[inventory_hostname]['status'] }}</td>
+        <td>{{ hostvars[inventory_hostname]['reason'] }}</td>
       </tr>
-      {% endfor %}
     </tbody>
   </table>
+
+  <h2>Unreachable Hosts</h2>
+  {% if unreachable_hosts %}
+    <p>The following hosts were unreachable:</p>
+    <ul>
+      {% for host in unreachable_hosts %}
+        <li>{{ host }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>All hosts were reachable.</p>
+  {% endif %}
+
+  <h2>Failed Hosts</h2>
+  {% if failed_hosts %}
+    <p>The following hosts failed tasks:</p>
+    <ul>
+      {% for host, tasks in failed_hosts.items() %}
+        <li>{{ host }}</li>
+        <ul>
+          {% for task in tasks %}
+            <li>{{ task }}</li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>All tasks ran successfully on all hosts.</p>
+  {% endif %}
+
 </body>
 </html>
