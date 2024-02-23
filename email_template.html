@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AWX Job {{ job_name }} - Failed Tasks</title>
+</head>
+<body>
+    <h1>Job Details</h1>
+    <p>Job Name: {{ job_name }}</p>
+    <p>Job ID: {{ job_id }}</p>
+    <p>Start Time: {{ job_started }}</p>
+    <p>End Time: {{ job_finished }}</p>
+
+    <h2>Failed Hosts</h2>
+    <ul>
+        {% for host, tasks in failed_hosts.items %}
+            <li><b>{{ host }}</b>:</li>
+            <ul>
+                {% for task, reason in tasks.items %}
+                    <li>Task: {{ task }}</li>
+                    <li>Reason: {{ reason }}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </ul>
+
+    <h2>Additional Information</h2>
+    {% if job_explanation %}
+        {{ job_explanation }}
+    {% endif %}
+
+    <p>Link to Job Details: <a href="{{ job_url }}">{{ job_url }}</a></p>
+</body>
+</html>
